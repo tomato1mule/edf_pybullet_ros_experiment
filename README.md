@@ -80,7 +80,7 @@ mamba install ros-noetic-ros-numpy=0.0.4
 
 # 2.3 Configure catkin
 ```shell
-cd catkin_ws
+cd ros_edf_interface
 catkin_make
 ```
 
