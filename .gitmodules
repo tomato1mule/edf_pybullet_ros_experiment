@@ -4,3 +4,6 @@
 [submodule "edf_env"]
 	path = edf_env
 	url = ./edf_env/
+[submodule "edf"]
+	path = edf
+	url = ./edf
