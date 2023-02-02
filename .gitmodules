@@ -1,0 +1,6 @@
+[submodule "ros_edf_interface"]
+	path = ros_edf_interface
+	url = ./ros_edf_interface
+[submodule "edf_env"]
+	path = edf_env
+	url = ./edf_env/

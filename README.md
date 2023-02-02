@@ -1,6 +1,10 @@
 # 1. edf_pybullet_ros_experiment
 Experiments for Equivariant Descriptor Fields with PyBullet and ROS MoveIt.
 # 2. Installation
+It is important to clone **RECURSIVELY**.
+```shell
+git clone --recursive https://github.com/tomato1mule/edf_pybullet_ros_experiment
+```
 
 # 2.1 Setup conda env
 ```shell
@@ -8,8 +12,8 @@ Experiments for Equivariant Descriptor Fields with PyBullet and ROS MoveIt.
 conda install mamba -c conda-forge
 
 # now create a new environment
-mamba create -n edf_env python=3.8
-conda activate edf_env
+mamba create -n edf_exp python=3.8
+conda activate edf_exp
 
 # Install dependencies
 
@@ -57,7 +61,7 @@ mamba install mesa-libgl-devel-cos7-x86_64 mesa-dri-drivers-cos7-x86_64 libselin
 # reload environment to activate required scripts before running anything
 # on Windows, please restart the Anaconda Prompt / Command Prompt!
 conda deactivate
-conda activate edf_env
+conda activate edf_exp
 
 # if you want to use rosdep, also do:
 mamba install rosdep
@@ -82,7 +86,6 @@ catkin_make
 
 # 2.5 
 ```shell
-# source {PATH/TO}/edf_env/catkin_ws/devel/setup.bash
 bash conda_env_setup.sh
 ```
 
