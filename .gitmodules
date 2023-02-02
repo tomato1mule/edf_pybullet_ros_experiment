@@ -1,9 +1,9 @@
 [submodule "ros_edf_interface"]
 	path = ros_edf_interface
-	url = ./ros_edf_interface
+	url = https://github.com/tomato1mule/ros_edf_interface
 [submodule "edf_env"]
 	path = edf_env
-	url = ./edf_env/
+	url = https://github.com/tomato1mule/edf_env
 [submodule "edf"]
 	path = edf
-	url = ./edf
+	url = https://github.com/tomato1mule/edf
