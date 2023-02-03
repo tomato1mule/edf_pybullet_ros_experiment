@@ -4,6 +4,6 @@
 [submodule "edf_env"]
 	path = edf_env
 	url = https://github.com/tomato1mule/edf_env
-[submodule "edf"]
-	path = edf
-	url = https://github.com/tomato1mule/edf
+[submodule "edf_standalone"]
+	path = edf_standalone
+	url = https://github.com/tomato1mule/edf_standalone
