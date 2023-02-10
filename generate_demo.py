@@ -13,7 +13,14 @@ import open3d as o3d
 
 env_interface = EdfRosInterface(reference_frame = "scene")
 
+
+
+
+
 dataset = []
+
+
+
 
 points, colors = env_interface.observe_ee(obs_type = 'pointcloud', update = True)
 grasp_pc = PointCloud.from_numpy(points=points, colors=colors)
@@ -22,10 +29,29 @@ scene_pc = PointCloud.from_numpy(points=points, colors=colors)
 
 target_poses = np.array([[0.0, 0.0, 1.0, 0.0, -0.05, 0.0, 0.275]])
 pick_poses = SE3.from_numpy(orns = target_poses[..., :4], positions = target_poses[..., 4:], versor_last_input = False)
-env_interface.pick(target_poses=target_poses)
+result = env_interface.pick(target_poses=target_poses)
 
-pick_demo = TargetPoseDemo(target_poses=pick_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
+pick_success = result[-1] is not None
+if True: # pick_success:
+    pick_demo = TargetPoseDemo(target_poses=pick_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
 
-demo_seq = DemoSequence(demo_seq = [pick_demo])
+
+
+
+
+points, colors = env_interface.move_and_observe()
+grasp_pc = PointCloud.from_numpy(points=points, colors=colors)
+points, colors = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
+scene_pc = PointCloud.from_numpy(points=points, colors=colors)
+
+target_poses = np.array([[0.0, 0.0, 1.0, 0.0, -0.05, 0.0, 0.275]])
+place_poses = SE3.from_numpy(orns = target_poses[..., :4], positions = target_poses[..., 4:], versor_last_input = False)
+# result = env_interface.pick(target_poses=target_poses)
+
+place_demo = TargetPoseDemo(target_poses=place_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
+
+
+
+demo_seq = DemoSequence(demo_seq = [pick_demo, place_demo])
 dataset.append(demo_seq)
 save_demos(demos=dataset, dir="demo/test_demo")
