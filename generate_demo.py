@@ -1,57 +1,92 @@
-import edf_env
-from edf_env.env import UR5Env
 from ros_edf.ros_interface import EdfRosInterface
-from edf_env.pybullet_pc_utils import pb_cams_to_pc
-from edf_env.pc_utils import pcd_from_numpy, draw_geometry
+from ros_edf.pc_utils import pcd_from_numpy, draw_geometry, reconstruct_surface
 from edf.data import PointCloud, SE3, TargetPoseDemo, DemoSequence, save_demos
 
+import torch
 import numpy as np
 import yaml
 import plotly as pl
 import plotly.express as ple
 import open3d as o3d
 
+
+
+### Initialize EDF ROS Interface
+
 env_interface = EdfRosInterface(reference_frame = "scene")
+env_interface.reset()
+env_interface.moveit_interface.arm_group.set_planning_time(seconds=5)
 
-
-
-
+### Initialize dataset list
 
 dataset = []
 
+### Observe Point clouds
 
+grasp_pc = env_interface.observe_eef(obs_type = 'pointcloud', update = True)
+scene_pc = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
 
+### Pick
 
-points, colors = env_interface.observe_ee(obs_type = 'pointcloud', update = True)
-grasp_pc = PointCloud.from_numpy(points=points, colors=colors)
-points, colors = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
-scene_pc = PointCloud.from_numpy(points=points, colors=colors)
-
-target_poses = np.array([[0.0, 0.0, 1.0, 0.0, -0.05, 0.0, 0.275]])
-pick_poses = SE3.from_numpy(orns = target_poses[..., :4], positions = target_poses[..., 4:], versor_last_input = False)
+target_poses = SE3([0.0, 0.0, 1.0, 0.0, -0.05, 0.0, 0.275])
 result = env_interface.pick(target_poses=target_poses)
 
 pick_success = result[-1] is not None
+
 if True: # pick_success:
-    pick_demo = TargetPoseDemo(target_poses=pick_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
+    pick_demo = TargetPoseDemo(target_poses=target_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
 
+### Move to observe gripper
 
+grasp_pc = env_interface.observe_eef(obs_type = 'pointcloud', update = True)
+env_interface.attach(pcd = grasp_pc)
 
+env_interface.move_to_target_pose(poses = SE3([0.0, 0.0, 1.0, 0.0, 0.00, 0.0, 0.6]))
 
+### Observe gripper
 
-points, colors = env_interface.move_and_observe()
-grasp_pc = PointCloud.from_numpy(points=points, colors=colors)
-points, colors = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
-scene_pc = PointCloud.from_numpy(points=points, colors=colors)
+env_interface.detach()
+grasp_pc = env_interface.observe_eef(obs_type = 'pointcloud', update = True)
+env_interface.attach(pcd = grasp_pc)
 
-target_poses = np.array([[0.0, 0.0, 1.0, 0.0, -0.05, 0.0, 0.275]])
-place_poses = SE3.from_numpy(orns = target_poses[..., :4], positions = target_poses[..., 4:], versor_last_input = False)
-# result = env_interface.pick(target_poses=target_poses)
+### Observe Scene
 
-place_demo = TargetPoseDemo(target_poses=place_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
+env_interface.move_to_target_pose(SE3([0.0, 0.0, 1.0, 0.0, -0.4, 0.4, 0.6]))
 
+scene_pc = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
 
+env_interface.move_to_target_pose(poses = SE3([0.0, 0.0, 1.0, 0.0, 0.00, 0.0, 0.6]))
+
+### Place
+
+target_poses = SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.12, -0.18, 0.35])
+results, result_pose = env_interface.move_to_target_pose(poses = target_poses)
+
+env_interface.detach()
+env_interface.release()
+
+place_demo = TargetPoseDemo(target_poses=target_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
+
+### Save
 
 demo_seq = DemoSequence(demo_seq = [pick_demo, place_demo])
 dataset.append(demo_seq)
 save_demos(demos=dataset, dir="demo/test_demo")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
