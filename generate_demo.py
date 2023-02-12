@@ -1,6 +1,7 @@
 from ros_edf.ros_interface import EdfRosInterface
 from ros_edf.pc_utils import pcd_from_numpy, draw_geometry, reconstruct_surface
 from edf.data import PointCloud, SE3, TargetPoseDemo, DemoSequence, save_demos
+from edf.pc_utils import optimize_pcd_collision
 
 import torch
 import numpy as np
@@ -58,35 +59,23 @@ scene_pc = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
 env_interface.move_to_target_pose(poses = SE3([0.0, 0.0, 1.0, 0.0, 0.00, 0.0, 0.6]))
 
 ### Place
+target_poses = SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.12, -0.18, 0.30])
+_, pre_place_poses = optimize_pcd_collision(x=scene_pc, y=grasp_pc, 
+                                            cutoff_r = 0.03, dt=0.01, eps=1., iters=5,
+                                            rel_pose=target_poses)
+results, result_pose = env_interface.move_to_target_pose(poses = pre_place_poses)
+if results[-1] is True:
+    result = env_interface.move_cartesian(poses=target_poses, cartesian_step=0.01, cspace_step_thr=10, avoid_collision=False)
+else:
+    result = False
 
-target_poses = SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.12, -0.18, 0.35])
-results, result_pose = env_interface.move_to_target_pose(poses = target_poses)
-
+assert result is True
 env_interface.detach()
 env_interface.release()
-
 place_demo = TargetPoseDemo(target_poses=target_poses, scene_pc=scene_pc, grasp_pc=grasp_pc)
 
-### Save
+# ### Save
 
-demo_seq = DemoSequence(demo_seq = [pick_demo, place_demo])
-dataset.append(demo_seq)
-save_demos(demos=dataset, dir="demo/test_demo")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# demo_seq = DemoSequence(demo_seq = [pick_demo, place_demo])
+# dataset.append(demo_seq)
+# save_demos(demos=dataset, dir="demo/test_demo")
