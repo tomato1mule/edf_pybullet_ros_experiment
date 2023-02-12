@@ -8,7 +8,7 @@ std_X: 5.
 #          [-30., -5.]]
 ranges: [[-23., 23.],
          [-23., 23.],
-         [-33., 0.]]
+         [-1., 32.]]
 irreps_descriptor: "10x0e + 10x1e + 4x2e + 2x3e"
 sh_lmax_descriptor: 3
 number_of_basis_descriptor: 5
@@ -24,9 +24,9 @@ field_cutoff_Q: 5.
 # ranges_Q: [[-15., 15.],
 #            [-15., 15.],
 #            [-10., 10.]]
-ranges_Q: [[-20., 20.],
-           [-20., 20.],
-           [-10., 20.]]
+ranges_Q: [[-15., 15.],
+           [-15., 15.],
+           [-0., 30.]]
 irreps_out_Q: "10x0e + 10x1e + 4x2e + 2x3e"
 sh_lmax_descriptor_Q: 3
 number_of_basis_descriptor_Q: 10
