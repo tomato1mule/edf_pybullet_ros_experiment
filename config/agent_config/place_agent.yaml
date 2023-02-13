@@ -24,9 +24,9 @@ field_cutoff_Q: 5.
 # ranges_Q: [[-15., 15.],
 #            [-15., 15.],
 #            [-10., 10.]]
-ranges_Q: [[-15., 15.],
-           [-15., 15.],
-           [-0., 30.]]
+ranges_Q: [[-20., 20.],
+           [-20., 20.],
+           [-0., 40.]]
 irreps_out_Q: "10x0e + 10x1e + 4x2e + 2x3e"
 sh_lmax_descriptor_Q: 3
 number_of_basis_descriptor_Q: 10
