@@ -110,7 +110,7 @@ print(result)
 # ### Place
 
 
-place_poses = SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.13, -0.18, 0.31])
+place_poses = SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.13, -0.20, 0.32])
 _, pre_place_poses = optimize_pcd_collision(x=scene_raw, y=grasp_raw, 
                                             cutoff_r = 0.03, dt=0.01, eps=1., iters=5,
                                             rel_pose=place_poses)
@@ -120,7 +120,7 @@ post_place_poses = place_poses * pick_pose.inv() * pre_pick_pose
 idx = 0
 place_pose, pre_place_pose, post_place_pose = place_poses[idx], pre_place_poses[idx], post_place_poses[idx]
 
-colcheck_r = 0.003 # Should be similar to voxel filter size
+colcheck_r = 0.0015 # Should be similar to voxel filter size
 col_check = check_pcd_collision(x=scene_raw, y=grasp_raw.transformed(place_pose)[0], r = colcheck_r)
 print(f"Collision-free Place Pose: {not col_check}")
 assert not col_check, "No collision-free place pose found!"
