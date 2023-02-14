@@ -110,7 +110,7 @@ print(result)
 # ### Place
 
 
-place_poses = SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.12, -0.18, 0.31])
+place_poses = SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.13, -0.18, 0.31])
 _, pre_place_poses = optimize_pcd_collision(x=scene_raw, y=grasp_raw, 
                                             cutoff_r = 0.03, dt=0.01, eps=1., iters=5,
                                             rel_pose=place_poses)
