@@ -82,12 +82,25 @@ mamba install ros-noetic-ros-numpy=0.0.4
 ```shell
 cd ros_edf_interface
 catkin_make
+cd ..
 ```
 
 # 2.5 
 ```shell
+source ros_edf_interface/devel/setup.sh
 bash conda_env_setup.sh
+conda deactivate
+conda activate edf_exp
+bash create_jupyter_dotenv.sh
 ```
+
+# 2.6
+```shell
+conda activate edf_exp
+pip install python-dotenv            # ==0.21.1
+bash create_jupyter_dotenv.sh
+```
+
 
 # 3
 ```shell
