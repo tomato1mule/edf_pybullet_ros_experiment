@@ -29,8 +29,19 @@ best_pose = SE3(train_logs['best_neg_T'])
 sampled_poses= SE3(train_logs['sampled_Ts'])
 
 
+
+scene_ranges = np.array([[-23., 23.],
+                         [-23., 23.],
+                         [-1., 32.]])
+n_trans_step = 100
+n_rot_step = 100
+slider_size = 500
+point_size = 3
+
+
 def get_pcd_repr(id, points, colors):
     return dash_vtk.GeometryRepresentation(id=id, 
+                                           property={"pointSize": point_size},
                                            children=[dash_vtk.PolyData(points=points.ravel(), 
                                                                        connectivity='points', 
                                                                        children=[dash_vtk.PointData([dash_vtk.DataArray(registration='setScalars',
@@ -49,10 +60,7 @@ vtk_view = dash_vtk.View(children=[scene_repr, grasp_repr], id="vtk-view1", back
 app = Dash(__name__)
 server = app.server
 
-# app.layout = html.Div(
-#     style={"height": "calc(100vh - 16px)"},
-#     children=[html.Div(vtk_view, style={"height": "100%", "width": "100%"})],
-# )
+
 rows = []
 first_row = html.Div(children=[html.Div(children=[html.Div(["Show Scene: ", dash_daq.BooleanSwitch(id='scene_visible_toggle', on=True),]),
                                                   html.Div(["Show Gripper: ", dash_daq.BooleanSwitch(id='grasp_visible_toggle', on=True),])
@@ -60,8 +68,32 @@ first_row = html.Div(children=[html.Div(children=[html.Div(["Show Scene: ", dash
 
                                html.Div(children=[vtk_view], style={"height": "1000px", "width": "1000px"}, id="vtk-view1-panel"),
 
-                               html.Div([html.H6("Change the value in the text box to see callbacks in action!"),
-                                         html.Div(["Input: ", dcc.Input(id='my-input', value='initial value', type='text')]),
+                               html.Div([html.H3("Target Pose"),
+                                         #html.Div(["Input: ", dcc.Input(id='my-input', value=0., type='number')]),
+                                         html.Div(["x: ", 
+                                                   dash_daq.Slider(id='x-slider', min=scene_ranges[0,0], max=scene_ranges[0,1], value=scene_ranges[0,0], step=(scene_ranges[0,1]-scene_ranges[0,0])/n_trans_step, size=slider_size),
+                                                   html.Div(id='current-x')
+                                                   ]),
+                                         html.Div(["y: ", 
+                                                   dash_daq.Slider(id='y-slider', min=scene_ranges[1,0], max=scene_ranges[1,1], value=scene_ranges[1,0], step=(scene_ranges[1,1]-scene_ranges[1,0])/n_trans_step, size=slider_size),
+                                                   html.Div(id='current-y')
+                                                   ]),
+                                         html.Div(["z: ", 
+                                                   dash_daq.Slider(id='z-slider', min=scene_ranges[2,0], max=scene_ranges[2,1], value=scene_ranges[2,0], step=(scene_ranges[2,1]-scene_ranges[2,0])/n_trans_step, size=slider_size),
+                                                   html.Div(id='current-z')
+                                                   ]),
+                                         html.Div(["Rx: ", 
+                                                   dash_daq.Slider(id='Rx-slider', min=-180, max=180, value=-180, step=2*180/n_rot_step, size=slider_size),
+                                                   html.Div(id='current-Rx')
+                                                   ]),
+                                         html.Div(["Ry: ", 
+                                                   dash_daq.Slider(id='Ry-slider', min=-90, max=90, value=-90, step=180/n_rot_step, size=slider_size),
+                                                   html.Div(id='current-Ry')
+                                                   ]),
+                                         html.Div(["Rz: ", 
+                                                   dash_daq.Slider(id='Rz-slider', min=-180, max=180, value=-180, step=2*180/n_rot_step, size=slider_size),
+                                                   html.Div(id='current-Rz')
+                                                   ]),
                                          html.Br(),
                                          html.Div(id='my-output'),] , id="right-panel"),                            
                                ],
@@ -71,28 +103,57 @@ rows.append(first_row)
 # rows.append(second_row)
 app.layout = html.Div(children=rows, style={'display': 'flex', 'flex-direction': 'column'}, id='main_panel')
 
-
-
-@app.callback(
-    Output(component_id='my-output', component_property='children'),
-    Input(component_id='my-input', component_property='value')
-)
-def update_output_div(input_value):
-    return f'Output: {input_value}'
-
+# Scene Visibility Toggle
 @app.callback(
     Output(component_id="scene-pcd", component_property="actor"),
     Input(component_id='scene_visible_toggle', component_property='on')
 )
 def update_output_div(input_value):
     return {"visibility": input_value}
+# Equivalent to....
+# app.callback(
+#     Output(component_id="scene-pcd", component_property="actor"),
+#     Input(component_id='scene_visible_toggle', component_property='on')
+# )(update_output_div)
 
+
+
+# Grasp
 @app.callback(
+    Output(component_id='my-output', component_property='children'),
     Output(component_id="grasp-pcd", component_property="actor"),
-    Input(component_id='grasp_visible_toggle', component_property='on')
+    Input(component_id='grasp_visible_toggle', component_property='on'),
+    Input(component_id='x-slider', component_property='value'),
+    Input(component_id='y-slider', component_property='value'),
+    Input(component_id='z-slider', component_property='value'),
+    Input(component_id='Rx-slider', component_property='value'),
+    Input(component_id='Ry-slider', component_property='value'),
+    Input(component_id='Rz-slider', component_property='value'),
 )
-def update_output_div(input_value):
-    return {"visibility": input_value}
+def update_output_div(visible, x, y, z, Rx, Ry, Rz):
+    output = [f'Target Pose: {x,y,z}']
+    output.append({"position": [x, y, z], 'orientation': [Rx, Ry, Rz], "visibility": visible})
+    return tuple(output)
+
+
+# Get slider numbers
+@app.callback(
+    Output(component_id='current-x', component_property='children'),
+    Output(component_id='current-y', component_property='children'),
+    Output(component_id='current-z', component_property='children'),
+    Output(component_id='current-Rx', component_property='children'),
+    Output(component_id='current-Ry', component_property='children'),
+    Output(component_id='current-Rz', component_property='children'),
+    Input(component_id='x-slider', component_property='value'),
+    Input(component_id='y-slider', component_property='value'),
+    Input(component_id='z-slider', component_property='value'),
+    Input(component_id='Rx-slider', component_property='value'),
+    Input(component_id='Ry-slider', component_property='value'),
+    Input(component_id='Rz-slider', component_property='value'),
+)
+def update_output_div(x,y,z,Rx,Ry,Rz):
+    return f"{x}", f"{y}", f"{z}", f"{Rx}", f"{Ry}", f"{Rz}"
+
 
 
 
