@@ -27,17 +27,48 @@ target_pose = SE3(train_logs['target_T'])
 best_pose = SE3(train_logs['best_neg_T'])
 sampled_poses= SE3(train_logs['sampled_Ts'])
 
-scene_repr = dash_vtk.PointCloudRepresentation(xyz=scene_raw.points.ravel(), rgb=scene_raw.colors.ravel() * 255, property={"pointSize": 2})
-scene_repr.id = 'scene'
-grasp_repr = dash_vtk.PointCloudRepresentation(xyz=grasp_raw.points.ravel(), rgb=grasp_raw.colors.ravel() * 255, property={"pointSize": 2})
-grasp_repr.id = 'grasp'
 
+def PointCloudRepresentation(**kwargs):
+  return dash_vtk.GeometryRepresentation(
+      id=kwargs.get('id'),
+      colorMapPreset=kwargs.get('colorMapPreset'),
+      colorDataRange=kwargs.get('colorDataRange'),
+      property=kwargs.get('property'),
+      children=[
+      dash_vtk.PolyData(
+          points=kwargs.get('xyz'),
+          connectivity='points',
+          children=[
+          dash_vtk.PointData([
+              dash_vtk.DataArray(
+              registration='setScalars',
+              values={kwargs.get('scalars')}
+              )
+          ])
+          ],
+      )
+      ],
+  )
+
+def get_pcd_repr(id, points, colors):
+    return dash_vtk.GeometryRepresentation(id=id, 
+                                           children=[dash_vtk.PolyData(points=points.ravel(), 
+                                                                       connectivity='points', 
+                                                                       children=[dash_vtk.PointData([dash_vtk.DataArray(registration='setScalars',
+                                                                                                                        type='Uint8Array',
+                                                                                                                        numberOfComponents=3,
+                                                                                                                        values=colors.ravel() * 255)])],)],)
+
+
+
+
+scene_repr = get_pcd_repr(id = 'scene-pcd', points = scene_raw.points, colors=scene_raw.colors)
+grasp_repr = get_pcd_repr(id = 'grasp-pcd', points = grasp_raw.points, colors=grasp_raw.colors)
 vtk_view = dash_vtk.View(children=[scene_repr, grasp_repr], id="vtk-view1")
 
 
-grasp_repr2 = dash_vtk.PointCloudRepresentation(xyz=grasp_raw.points.ravel(), rgb=grasp_raw.colors.ravel() * 255, property={"pointSize": 2})
-grasp_repr2.id = 'grasp2'
-vtk_view2 = dash_vtk.View(children=[grasp_repr2])
+grasp2_repr = get_pcd_repr(id = 'grasp2-pcd', points = grasp_raw.points, colors=grasp_raw.colors)
+vtk_view2 = dash_vtk.View(children=[grasp2_repr], id="vtk-view2")
 
 
 
@@ -49,27 +80,33 @@ server = app.server
 #     children=[html.Div(vtk_view, style={"height": "100%", "width": "100%"})],
 # )
 rows = []
-first_row = html.Div(children=[html.Div(children=[vtk_view], style={'padding': 10, 'flex': 1, "height": "30%", "width": "30%"}),
-                               html.Div(children=[vtk_view2], style={'padding': 10, 'flex': 1, "height": "30%", "width": "30%"}),
+first_row = html.Div(children=[html.Div(children=[vtk_view], style={'padding': 10, 'flex': 1, "height": "30%", "width": "30%"}, id="vtk-view1-panel"),
+                               html.Div(children=[vtk_view2], style={'padding': 10, 'flex': 1, "height": "30%", "width": "30%"}, id="vtk-view2-panel"),
                                html.Div([html.H6("Change the value in the text box to see callbacks in action!"),
                                          html.Div(["Input: ", dcc.Input(id='my-input', value='initial value', type='text')]),
                                          html.Br(),
-                                         html.Div(id='my-output'),]),
+                                         html.Div(id='my-output'),] , id="input-panel"),
                                ],
                      style={'display': 'flex', 'flex-direction': 'row', "height": "calc(100vh - 16px)"})
 rows.append(first_row)
 # second_row = html.Div(children=["Input: ", dcc.Input(id='my-input', value='initial value', type='text')])
 # rows.append(second_row)
-app.layout = html.Div(children=rows, style={'display': 'flex', 'flex-direction': 'column', "height": "calc(100vh - 16px)"})
+app.layout = html.Div(children=rows, style={'display': 'flex', 'flex-direction': 'column', "height": "calc(100vh - 16px)"}, id='main_panel')
 
 
 
 @app.callback(
-    Output(component_id='my-output', component_property='children'),
+    # Output(component_id='my-output', component_property='children'),
+    Output("scene-pcd", "actor"),
     Input(component_id='my-input', component_property='value')
 )
 def update_output_div(input_value):
-    return f'Output: {input_value}'
+    print(type(input_value))
+    if input_value == 'invis':
+        return {"visibility": False}
+    else:
+        return {"visibility": True}
+
 
 
 
