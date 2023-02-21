@@ -74,8 +74,8 @@ interactorSettings=[
 ]
 
 
-
-
+# https://vtk.org/doc/nightly/html/classvtkProp3D.html#a1c44f66f6ce311d9f38b9e1223f9cee5
+# Orientation is specified as X,Y and Z rotations in that order, but they are performed as RotateZ, RotateX, and finally RotateY.
 def get_pcd_repr(id, points, colors):
     return dash_vtk.GeometryRepresentation(id=id, 
                                            property={"pointSize": point_size},
@@ -90,6 +90,7 @@ def get_pcd_repr(id, points, colors):
 scene_repr = get_pcd_repr(id = 'scene-pcd', points = scene_raw.points, colors=scene_raw.colors)
 grasp_repr = get_pcd_repr(id = 'grasp-pcd', points = grasp_raw.points, colors=grasp_raw.colors)
 vtk_view = dash_vtk.View(children=[scene_repr, grasp_repr], id="vtk-view1", background=[1., 1., 1.], interactorSettings=interactorSettings)
+
 
 
 
