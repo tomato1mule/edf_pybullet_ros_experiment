@@ -32,11 +32,48 @@ sampled_poses= SE3(train_logs['sampled_Ts'])
 
 scene_ranges = np.array([[-23., 23.],
                          [-23., 23.],
-                         [-1., 32.]])
+                         [-1., 40.]])
 n_trans_step = 100
 n_rot_step = 100
 slider_size = 500
 point_size = 3
+
+
+
+
+
+interactorSettings=[
+  {
+    'button': 1,
+    'action': 'Rotate',
+  }, {
+    'button': 2,
+    'action': 'Pan',
+  }, {
+    'button': 3,
+    'action': 'Zoom',
+    'scrollEnabled': True,
+  }, {
+    'button': 1,
+    'action': 'Pan',
+    'shift': True,
+  }, {
+    'button': 1,
+    'action': 'Zoom',
+    'alt': True,
+  }, {
+    'button': 1,
+    'action': 'Pan', #'ZoomToMouse',
+    'control': True,
+  }, {
+    'button': 1,
+    'action': 'Roll',
+    'alt': True,
+    'shift': True,
+  }
+]
+
+
 
 
 def get_pcd_repr(id, points, colors):
@@ -52,7 +89,7 @@ def get_pcd_repr(id, points, colors):
 
 scene_repr = get_pcd_repr(id = 'scene-pcd', points = scene_raw.points, colors=scene_raw.colors)
 grasp_repr = get_pcd_repr(id = 'grasp-pcd', points = grasp_raw.points, colors=grasp_raw.colors)
-vtk_view = dash_vtk.View(children=[scene_repr, grasp_repr], id="vtk-view1", background=[1., 1., 1.])
+vtk_view = dash_vtk.View(children=[scene_repr, grasp_repr], id="vtk-view1", background=[1., 1., 1.], interactorSettings=interactorSettings)
 
 
 
