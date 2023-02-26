@@ -1,4 +1,5 @@
 import os
+import time
 
 import torch
 import numpy as np
@@ -55,5 +56,10 @@ demo_server.update_grasp_pcd(pcd=grasp_raw)
 if server_debug:
     demo_server.run()
 
-target_poses = demo_server.get_user_response()
-print(target_poses)
+while True:
+    demo_server.update_robot_state(f"Waiting for Demo...")
+    user_response = demo_server.get_user_response()
+    if user_response == 'RESET':
+        demo_server.update_robot_state(f"Resetting Robot")
+        time.sleep(1)
+    print(user_response)
