@@ -18,11 +18,11 @@ print(f"Visualizing {os.path.join(agent_param_dir,log_name)}")
 train_logs = gzip_load(dir=agent_param_dir, filename=log_name)
 scene_raw: PointCloud = train_logs['scene_raw']
 grasp_raw: PointCloud = train_logs['grasp_raw']
-query_points = train_logs['edf_outputs']['query_points']
-query_attention = train_logs['edf_outputs']['query_attention']
-target_pose = SE3(train_logs['target_T'])
-best_pose = SE3(train_logs['best_neg_T'])
-sampled_poses= SE3(train_logs['sampled_Ts'])
+# query_points = train_logs['edf_outputs']['query_points']
+# query_attention = train_logs['edf_outputs']['query_attention']
+# target_pose = SE3(train_logs['target_T'])
+# best_pose = SE3(train_logs['best_neg_T'])
+# sampled_poses= SE3(train_logs['sampled_Ts'])
 
 
 
@@ -54,3 +54,6 @@ demo_server.update_grasp_pcd(pcd=grasp_raw)
 
 if server_debug:
     demo_server.run()
+
+target_poses = demo_server.get_user_response()
+print(target_poses)
