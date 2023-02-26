@@ -155,6 +155,12 @@ if place_result == "SUCCESS":
 else:
     raise NotImplementedError("Place failed")
 
+# Go back home
+for _ in range(3):
+    result = env_interface.move_to_named_target("init")
+    if result == 'SUCCESS':
+        break
+print(f"Move to End-Effector observation pose: {result}")
 
 ###### Save Collected Demonstrations ######
 
@@ -163,4 +169,6 @@ if save_demo:
     demo_list.append(demo_seq)
     save_demos(demos=demo_list, dir="demo/test_demo")
 
+if demo_from_server:
+    demo_server.close()
 
