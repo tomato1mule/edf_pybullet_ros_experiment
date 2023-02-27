@@ -18,7 +18,7 @@ import open3d as o3d
 
 ###### Initialize Demo Server ######
 save_demo = True
-n_episodes = 1
+n_episodes = 10
 count_reset_episodes = False
 
 scene_ranges = np.array([[-0.23, 0.23],
