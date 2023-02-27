@@ -10,9 +10,7 @@ from edf.agent import PickAgent, PlaceAgent
 app = Dash(__name__)
 
 def main_func(log_id):
-    agent_config_dir = "config/agent_config/place_agent_dev.yaml"
-    train_config_dir = "config/train_config/train_place_dev.yaml"
-    agent_param_dir = "checkpoint/mug_10_demo/place_dev"
+    agent_param_dir = "checkpoint/mug_10_demo/pick"
     log_name = f"trainlog_iter_{log_id}.gzip"
     print(f"Visualizing {os.path.join(agent_param_dir,log_name)}")
 

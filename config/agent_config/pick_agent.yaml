@@ -20,5 +20,6 @@ mh_iter: 500
 langevin_iter: 100
 
 query_radius: 0.
+query_center: [0., 0., 15.]
 
 
