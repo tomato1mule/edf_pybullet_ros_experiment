@@ -49,7 +49,50 @@ def get_pick(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
     else:
         raise ValueError(f"Unknown user response: {user_response}")
 
-        
+
+def get_place(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
+    # return SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.13, -0.20, 0.32])
+    demo_server.update_scene_pcd(pcd=scene)
+    demo_server.update_grasp_pcd(pcd=grasp)
+    user_response = demo_server.get_user_response()
+    if user_response == RESET:
+        return user_response
+    elif isinstance(user_response, SE3):
+        return user_response
+    else:
+        raise ValueError(f"Unknown user response: {user_response}")
+
+
+def update_system_msg(msg: str, wait_sec: float = 0.):
+    # print(msg)
+    demo_server.update_robot_state(msg)
+    if wait_sec:
+        time.sleep(wait_sec)
+
+def cleanup():
+    demo_server.close()
+
+
+
+
+
+
+
+
+
+
+
+
+def move_robot_near_target(pose: SE3, env_interface: EdfRosInterface):
+    assert len(pose) == 1
+
+    rel_pos = torch.tensor([-0.7, 0.], device=pose.device, dtype=pose.poses.dtype)
+    pos = pose.poses[0,4:6] + rel_pos
+    if pos[0] > -0.6:
+        pos[0] = -0.6
+
+    env_interface.move_robot_base(pos=pos) # x,y
+
 
 def get_pre_post_pick(scene: PointCloud, grasp: PointCloud, pick_poses: SE3) -> Tuple[SE3, SE3]:
     _, pre_pick_poses = optimize_pcd_collision(x=scene, y=grasp, 
@@ -71,20 +114,6 @@ def is_feasible_pick(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[s
 
     return FEASIBLE, 'COLLISION_FREE'
 
-
-def get_place(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
-    # return SE3([0.5000, -0.5000, -0.5000, -0.5000, 0.13, -0.20, 0.32])
-    demo_server.update_scene_pcd(pcd=scene)
-    demo_server.update_grasp_pcd(pcd=grasp)
-    user_response = demo_server.get_user_response()
-    if user_response == RESET:
-        return user_response
-    elif isinstance(user_response, SE3):
-        return user_response
-    else:
-        raise ValueError(f"Unknown user response: {user_response}")
-
-        
 
 def get_pre_post_place(scene: PointCloud, grasp: PointCloud, place_poses: SE3, pre_pick_pose: SE3, pick_pose: SE3) -> Tuple[SE3, SE3]:
     assert len(pick_pose) == len(pre_pick_pose) == 1
@@ -108,18 +137,6 @@ def is_feasible_place(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[
 
     return FEASIBLE, 'COLLISION_FREE'
 
-
-
-
-
-def update_system_msg(msg: str, wait_sec: float = 0.):
-    # print(msg)
-    demo_server.update_robot_state(msg)
-    if wait_sec:
-        time.sleep(wait_sec)
-
-def cleanup():
-    demo_server.close()
 
 
 ###### Initialize Robot Interface ######
@@ -167,6 +184,7 @@ while True:
                 pick_pose, pre_pick_pose, post_pick_pose = pick_poses[idx], pre_pick_poses[idx], post_pick_poses[idx]
                 feasibility, _info = is_feasible_pick(pose=pick_pose, scene=scene_raw, grasp=grasp_raw)
                 if feasibility == FEASIBLE:
+                    move_robot_near_target(pose=pick_pose, env_interface=env_interface)
                     pick_plan_result, pick_plans = env_interface.pick_plan(pre_pick_pose=pre_pick_pose, pick_pose=pick_pose)
                     if pick_plan_result == SUCCESS:
                         break
@@ -285,6 +303,7 @@ while True:
                 place_pose, pre_place_pose, post_place_pose = place_poses[idx], pre_place_poses[idx], post_place_poses[idx]
                 feasibility, _info = is_feasible_place(pose=place_pose, scene=scene_raw, grasp=grasp_raw)
                 if feasibility == FEASIBLE:
+                    move_robot_near_target(pose=place_pose, env_interface=env_interface)
                     place_plan_result, place_plans = env_interface.place_plan(pre_place_pose=pre_place_pose, place_pose=place_pose)
                     if place_plan_result == SUCCESS:
                         break
