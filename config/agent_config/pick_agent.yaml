@@ -8,7 +8,7 @@ std_X: 5.
 #          [-30., -5.]]
 ranges: [[-23., 23.],
          [-23., 23.],
-         [-1., 32.]]
+         [-1., 40.]]
 irreps_descriptor: "10x0e + 10x1e + 4x2e + 2x3e"
 sh_lmax_descriptor: 3
 number_of_basis_descriptor: 5

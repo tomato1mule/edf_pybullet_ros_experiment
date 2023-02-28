@@ -61,8 +61,8 @@ scene_voxel_size = 1.7
 grasp_voxel_size = 1.4
 scene_points_jitter = scene_voxel_size * 0.1
 grasp_points_jitter = grasp_voxel_size * 0.1
-scene_color_jitter = 0.015
-grasp_color_jitter = 0.015
+scene_color_jitter = 0.03
+grasp_color_jitter = 0.03
 
 scene_proc_fn = Compose([Downsample(voxel_size=1.7, coord_reduction="average"),
                          NormalizeColor(color_mean = torch.tensor([0.5, 0.5, 0.5]), color_std = torch.tensor([0.5, 0.5, 0.5])),

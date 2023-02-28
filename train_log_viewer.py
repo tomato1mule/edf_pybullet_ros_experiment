@@ -2,6 +2,8 @@ import os
 import argparse
 from dash import Dash, html, dcc
 
+import torch
+
 from edf.pc_utils import draw_geometry, create_o3d_points, get_plotly_fig
 from edf.data import PointCloud, SE3, TargetPoseDemo, DemoSequence, DemoSeqDataset, gzip_load
 from edf.preprocess import Rescale, NormalizeColor, Downsample, PointJitter, ColorJitter
@@ -9,14 +11,16 @@ from edf.agent import PickAgent, PlaceAgent
 
 app = Dash(__name__)
 
-def main_func(log_id):
-    agent_param_dir = "checkpoint/mug_10_demo/pick"
+def main_func(log_id, show_processed_pcd = True):
+    agent_param_dir = "checkpoint/mug_10_demo/place"
     log_name = f"trainlog_iter_{log_id}.gzip"
     print(f"Visualizing {os.path.join(agent_param_dir,log_name)}")
 
     train_logs = gzip_load(dir=agent_param_dir, filename=log_name)
     scene_raw: PointCloud = train_logs['scene_raw']
     grasp_raw: PointCloud = train_logs['grasp_raw']
+    scene_proc: PointCloud = train_logs['scene_proc']
+    grasp_proc: PointCloud = train_logs['grasp_proc']
     query_points = train_logs['edf_outputs']['query_points']
     query_attention = train_logs['edf_outputs']['query_attention']
     target_pose = SE3(train_logs['target_T'])
@@ -40,9 +44,15 @@ def main_func(log_id):
     fig_target = fig_target.add_traces([target_pl])
 
 
-
-    best_sample_pcd = PointCloud.merge(scene_raw, grasp_raw.transformed(best_pose)[0])
-    best_sample_pl = best_sample_pcd.plotly(point_size=1.0)
+    if show_processed_pcd:
+        revert_color = NormalizeColor(color_mean=torch.tensor([-1., -1., -1.]), color_std=torch.tensor([2., 2., 2.]))
+        scene_proc = revert_color(scene_proc)
+        grasp_proc = revert_color(grasp_proc)
+        best_sample_pcd = PointCloud.merge(scene_proc, grasp_proc.transformed(best_pose)[0])
+        best_sample_pl = best_sample_pcd.plotly(point_size=5.0)
+    else:
+        best_sample_pcd = PointCloud.merge(scene_raw, grasp_raw.transformed(best_pose)[0])
+        best_sample_pl = best_sample_pcd.plotly(point_size=1.0)
     sample_pl = PointCloud.points_to_plotly(pcd=sampled_poses.points, point_size=7.0, colors=[0.2, 0.5, 0.8])
     fig_sample = get_plotly_fig("Sampled Placement")
     fig_sample = fig_sample.add_traces([best_sample_pl, sample_pl])
