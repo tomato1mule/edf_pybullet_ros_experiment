@@ -106,28 +106,6 @@ def get_pick(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
     return pick_poses
 
 
-def get_pre_post_pick(scene: PointCloud, grasp: PointCloud, pick_poses: SE3) -> Tuple[SE3, SE3]:
-    # _, pre_pick_poses = optimize_pcd_collision(x=scene, y=grasp, 
-    #                                             cutoff_r = 0.03, dt=0.01, eps=1., iters=50,
-    #                                             rel_pose=pick_poses)
-    pre_pick_poses = pick_poses * SE3(torch.tensor([1., 0., 0., 0., 0., 0., -0.05], device=pick_poses.device))
-    post_pick_poses = pre_pick_poses
-
-    return pre_pick_poses, post_pick_poses
-
-
-def is_feasible_pick(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[str, str]:
-    assert len(pose) == 1
-
-    colcheck_r = 0.003 # Should be similar to voxel filter size
-    col_check = check_pcd_collision(x=scene, y=grasp.transformed(pose)[0], r = colcheck_r)
-
-    if col_check:
-        return INFEASIBLE, 'COLLISION_DETECTED'
-
-    return FEASIBLE, 'COLLISION_FREE'
-
-
 def get_place(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
     scene_proc = scene_proc_fn(scene).to(device)
     grasp_proc = grasp_proc_fn(grasp).to(device)
@@ -149,6 +127,57 @@ def get_place(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
 
     return place_poses
 
+
+def update_system_msg(msg: str, wait_sec: float = 0.):
+    print(msg)
+    if wait_sec:
+        time.sleep(wait_sec)
+
+def cleanup():
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+def move_robot_near_target(pose: SE3, env_interface: EdfRosInterface):
+    assert len(pose) == 1
+
+    rel_pos = torch.tensor([-0.7, 0.], device=pose.device, dtype=pose.poses.dtype)
+    pos = pose.poses[0,4:6] + rel_pos
+    if pos[0] > -0.6:
+        pos[0] = -0.6
+
+    env_interface.move_robot_base(pos=pos) # x,y
+
+
+def get_pre_post_pick(scene: PointCloud, grasp: PointCloud, pick_poses: SE3) -> Tuple[SE3, SE3]:
+    # _, pre_pick_poses = optimize_pcd_collision(x=scene, y=grasp, 
+    #                                             cutoff_r = 0.03, dt=0.01, eps=1., iters=50,
+    #                                             rel_pose=pick_poses)
+    pre_pick_poses = pick_poses * SE3(torch.tensor([1., 0., 0., 0., 0., 0., -0.05], device=pick_poses.device))
+    post_pick_poses = pre_pick_poses
+
+    return pre_pick_poses, post_pick_poses
+
+
+def is_feasible_pick(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[str, str]:
+    assert len(pose) == 1
+
+    colcheck_r = 0.003 # Should be similar to voxel filter size
+    col_check = check_pcd_collision(x=scene, y=grasp.transformed(pose)[0], r = colcheck_r)
+
+    if col_check:
+        return INFEASIBLE, 'COLLISION_DETECTED'
+
+    return FEASIBLE, 'COLLISION_FREE'
         
 
 def get_pre_post_place(scene: PointCloud, grasp: PointCloud, place_poses: SE3, pre_pick_pose: SE3, pick_pose: SE3) -> Tuple[SE3, SE3]:
@@ -174,13 +203,7 @@ def is_feasible_place(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[
     return FEASIBLE, 'COLLISION_FREE'
 
 
-def update_system_msg(msg: str, wait_sec: float = 0.):
-    print(msg)
-    if wait_sec:
-        time.sleep(wait_sec)
 
-def cleanup():
-    pass
 
 
 
@@ -228,6 +251,7 @@ while True:
                 pick_pose, pre_pick_pose, post_pick_pose = pick_poses[idx], pre_pick_poses[idx], post_pick_poses[idx]
                 feasibility, _info = is_feasible_pick(pose=pick_pose, scene=scene_raw, grasp=grasp_raw)
                 if feasibility == FEASIBLE:
+                    move_robot_near_target(pose=pick_pose, env_interface=env_interface)
                     pick_plan_result, pick_plans = env_interface.pick_plan(pre_pick_pose=pre_pick_pose, pick_pose=pick_pose)
                     if pick_plan_result == SUCCESS:
                         break
@@ -346,6 +370,7 @@ while True:
                 place_pose, pre_place_pose, post_place_pose = place_poses[idx], pre_place_poses[idx], post_place_poses[idx]
                 feasibility, _info = is_feasible_place(pose=place_pose, scene=scene_raw, grasp=grasp_raw)
                 if feasibility == FEASIBLE:
+                    move_robot_near_target(pose=place_pose, env_interface=env_interface)
                     place_plan_result, place_plans = env_interface.place_plan(pre_place_pose=pre_place_pose, place_pose=place_pose)
                     if place_plan_result == SUCCESS:
                         break

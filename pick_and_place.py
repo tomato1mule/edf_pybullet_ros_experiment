@@ -36,7 +36,6 @@ demo_server.run()
 
 
 ###### Define Primitives ######
-
 def get_pick(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
     # return SE3([0.0, 0.0, 1.0, 0.0, -0.05, 0.0, 0.275])
     demo_server.update_scene_pcd(pcd=scene)
@@ -95,9 +94,10 @@ def move_robot_near_target(pose: SE3, env_interface: EdfRosInterface):
 
 
 def get_pre_post_pick(scene: PointCloud, grasp: PointCloud, pick_poses: SE3) -> Tuple[SE3, SE3]:
-    _, pre_pick_poses = optimize_pcd_collision(x=scene, y=grasp, 
-                                                cutoff_r = 0.03, dt=0.01, eps=1., iters=50,
-                                                rel_pose=pick_poses)
+    # _, pre_pick_poses = optimize_pcd_collision(x=scene, y=grasp, 
+    #                                             cutoff_r = 0.03, dt=0.01, eps=1., iters=50,
+    #                                             rel_pose=pick_poses)
+    pre_pick_poses = pick_poses * SE3(torch.tensor([1., 0., 0., 0., 0., 0., -0.05], device=pick_poses.device))
     post_pick_poses = pre_pick_poses
 
     return pre_pick_poses, post_pick_poses
