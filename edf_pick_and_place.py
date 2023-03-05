@@ -1,5 +1,5 @@
 import time
-from typing import Union, Optional, Dict, List, Tuple
+from typing import Union, Optional, Dict, List, Tuple, Any
 
 from ros_edf.ros_interface import EdfRosInterface
 from ros_edf.pc_utils import pcd_from_numpy, draw_geometry, reconstruct_surface
@@ -81,6 +81,10 @@ recover_scale = Rescale(rescale_factor=unit_len)
 
 
 ###### Define Primitives ######
+pick_checklist = []
+place_checklist = []
+
+
 def get_pick(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
     ##### Preprocess Observations #####
     scene_proc = scene_proc_fn(scene).to(device)
@@ -157,6 +161,33 @@ def move_robot_near_target(pose: SE3, env_interface: EdfRosInterface):
 
     env_interface.move_robot_base(pos=pos) # x,y
 
+def check_collision(pose: SE3, 
+                    scene: PointCloud, 
+                    grasp: PointCloud, 
+                    colcheck_r: float # Should be similar to voxel filter size
+                    ) -> bool:
+    assert len(pose) == 1
+
+    col_check = check_pcd_collision(x=scene, y=grasp.transformed(pose)[0], r = colcheck_r)
+
+    return col_check
+
+def feasibility_check(context: Dict[str, Any], check_list: List[Tuple[str, Dict[str, Any]]]) -> Tuple[str, str]:
+    available_check_types = ['collision_check']
+    
+    feasibility, msg = FEASIBLE, 'FEASIBLE'
+    for check in check_list:
+        check_type, check_kwarg = check
+        assert check_type in available_check_types
+
+        if check_type == 'collision_check':
+            col_check = check_collision(pose=context['pose'], 
+                                        scene=context['scene'], 
+                                        grasp=context['grasp'], **check_kwarg)
+            if col_check:
+                return INFEASIBLE, 'COLLISION_DETECTED'
+            
+    return feasibility, msg
 
 def get_pre_post_pick(scene: PointCloud, grasp: PointCloud, pick_poses: SE3) -> Tuple[SE3, SE3]:
     # _, pre_pick_poses = optimize_pcd_collision(x=scene, y=grasp, 
@@ -169,18 +200,6 @@ def get_pre_post_pick(scene: PointCloud, grasp: PointCloud, pick_poses: SE3) -> 
     return pre_pick_poses, post_pick_poses
 
 
-def is_feasible_pick(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[str, str]:
-    assert len(pose) == 1
-
-    colcheck_r = 0.003 # Should be similar to voxel filter size
-    col_check = check_pcd_collision(x=scene, y=grasp.transformed(pose)[0], r = colcheck_r)
-
-    if col_check:
-        return INFEASIBLE, 'COLLISION_DETECTED'
-
-    return FEASIBLE, 'COLLISION_FREE'
-        
-
 def get_pre_post_place(scene: PointCloud, grasp: PointCloud, place_poses: SE3, pre_pick_pose: SE3, pick_pose: SE3) -> Tuple[SE3, SE3]:
     assert len(pick_pose) == len(pre_pick_pose) == 1
 
@@ -191,17 +210,6 @@ def get_pre_post_place(scene: PointCloud, grasp: PointCloud, place_poses: SE3, p
 
     return pre_place_poses, post_place_poses
 
-
-def is_feasible_place(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[str, str]:
-    assert len(pose) == 1
-
-    colcheck_r = 0.0015 # Should be similar to voxel filter size
-    col_check = check_pcd_collision(x=scene, y=grasp.transformed(pose)[0], r = colcheck_r)
-
-    if col_check:
-        return INFEASIBLE, 'COLLISION_DETECTED'
-
-    return FEASIBLE, 'COLLISION_FREE'
 
 def observe(env_interface, max_try: int, attach: bool) -> bool:
     success = True
@@ -238,14 +246,16 @@ def observe(env_interface, max_try: int, attach: bool) -> bool:
 
     # Come back to default pose
     if move_result == SUCCESS:
-        env_interface.move_robot_base(pos = torch.tensor([-0.7, 0.0]))
         for _ in range(max_try):
             move_result, _info = env_interface.move_to_named_target("init")
             if move_result == SUCCESS:
                 break
             else:
                 continue
-    else:
+    if move_result == SUCCESS:
+        env_interface.move_robot_base(pos = torch.tensor([-0.7, 0.0]))
+    
+    if move_result != SUCCESS:
         update_system_msg(f"Cannot Move to Observation Pose ({move_result}). Resetting env...", wait_sec=2.0)
         success = False
         
@@ -302,7 +312,8 @@ while True:
             ###### Check Feasiblity ######
             for idx in range(len(pick_poses)):
                 pick_pose, pre_pick_pose, post_pick_pose = pick_poses[idx], pre_pick_poses[idx], post_pick_poses[idx]
-                feasibility, _info = is_feasible_pick(pose=pick_pose, scene=scene_raw, grasp=grasp_raw)
+                context = {'pose': pick_pose, 'scene': scene_raw, 'grasp': grasp_raw}
+                feasibility, _info = feasibility_check(context=context, check_list=pick_checklist)
                 if feasibility == FEASIBLE:
                     move_robot_near_target(pose=pick_pose, env_interface=env_interface)
                     pick_plan_result, pick_plans = env_interface.pick_plan(pre_pick_pose=pre_pick_pose, pick_pose=pick_pose)
@@ -345,7 +356,7 @@ while True:
         update_system_msg(f"Pick result: {pick_result}")
         pick_demo = TargetPoseDemo(target_poses=pick_poses, scene_pc=scene_raw, grasp_pc=grasp_raw)
         env_interface.detach()
-        env_interface.attach_placeholder() # To avoid collsion with the grasped object
+        env_interface.attach_placeholder(size=0.15) # To avoid collsion with the grasped object
     else:
         update_system_msg(f"Pick result: {pick_result}, Resetting env...", wait_sec=2.0)
         reset_signal = True
@@ -377,7 +388,8 @@ while True:
             ###### Check Feasiblity ######
             for idx in range(len(place_poses)):
                 place_pose, pre_place_pose, post_place_pose = place_poses[idx], pre_place_poses[idx], post_place_poses[idx]
-                feasibility, _info = is_feasible_place(pose=place_pose, scene=scene_raw, grasp=grasp_raw)
+                context = {'pose': place_pose, 'scene': scene_raw, 'grasp': grasp_raw}
+                feasibility, _info = feasibility_check(context=context, check_list=place_checklist)
                 if feasibility == FEASIBLE:
                     move_robot_near_target(pose=place_pose, env_interface=env_interface)
                     place_plan_result, place_plans = env_interface.place_plan(pre_place_pose=pre_place_pose, place_pose=place_pose)
