@@ -210,7 +210,8 @@ def is_feasible_place(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[
 
 
 env_interface = EdfRosInterface(reference_frame = "scene")
-env_interface.moveit_interface.arm_group.set_planning_time(seconds=5)
+env_interface.moveit_interface.arm_group.set_planning_time(seconds=1)
+env_interface.moveit_interface.arm_group.allow_replanning(True)
 
 demo_list = []
 episode_count = 0
