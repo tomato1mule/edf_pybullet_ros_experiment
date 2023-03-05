@@ -354,7 +354,7 @@ while True:
     
 
     ###### Observe for Place ######
-    success, (scene_raw, grasp_raw) = observe(env_interface=env_interface, max_try = 10, attach=False)
+    success, (scene_raw, grasp_raw) = observe(env_interface=env_interface, max_try = 10, attach=True)
     if not success:
         reset_signal = True
         continue
