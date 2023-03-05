@@ -138,6 +138,71 @@ def is_feasible_place(pose: SE3, scene: PointCloud, grasp: PointCloud) -> Tuple[
 
     return FEASIBLE, 'COLLISION_FREE'
 
+def observe(env_interface, max_try: int, attach: bool) -> bool:
+    success = True
+    update_system_msg("Move to Observe...")
+
+
+    # Move to default pose before moving to observation pose
+    for _ in range(max_try):
+        move_result, _info = env_interface.move_to_named_target("init")
+        if move_result == SUCCESS:
+            break
+        else:
+            continue
+
+    # Move to observation pose
+    if move_result == SUCCESS:
+        env_interface.move_robot_base(pos = torch.tensor([-1.5, 0.]))
+        for _ in range(max_try):
+            move_result, _info = env_interface.move_to_named_target("observe")
+            if move_result == SUCCESS:
+                break
+            else:
+                continue
+    
+    # Observe
+    if move_result == SUCCESS:
+        if attach:
+            env_interface.detach()
+        grasp_raw = env_interface.observe_eef(obs_type = 'pointcloud', update = True)
+        if attach:
+            env_interface.attach(obj = grasp_raw)
+        scene_raw = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
+
+
+    # Come back to default pose
+    if move_result == SUCCESS:
+        env_interface.move_robot_base(pos = torch.tensor([-0.7, 0.0]))
+        for _ in range(max_try):
+            move_result, _info = env_interface.move_to_named_target("init")
+            if move_result == SUCCESS:
+                break
+            else:
+                continue
+    else:
+        update_system_msg(f"Cannot Move to Observation Pose ({move_result}). Resetting env...", wait_sec=2.0)
+        success = False
+        
+    return success, (scene_raw, grasp_raw)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ###### Initialize Robot Interface ######
@@ -163,9 +228,10 @@ while True:
     reset_signal = False
 
     ###### Observe ######
-    grasp_raw = env_interface.observe_eef(obs_type = 'pointcloud', update = True)
-    scene_raw = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
-
+    success, (scene_raw, grasp_raw) = observe(env_interface=env_interface, max_try = 10, attach=False)
+    if not success:
+        reset_signal = True
+        continue
 
     ###### Sample Pick Pose ######
     pick_max_try = 100000
@@ -236,54 +302,11 @@ while True:
     
 
     ###### Observe for Place ######
-    update_system_msg("Move to Observe EEF...")
-    max_try = 10
-    for _ in range(max_try):
-        move_result, _info = env_interface.move_to_named_target("init")
-        if move_result == SUCCESS:
-            break
-        else:
-            continue
-    if move_result == SUCCESS:
-        env_interface.detach()
-        grasp_raw = env_interface.observe_eef(obs_type = 'pointcloud', update = True)
-        env_interface.attach(obj = grasp_raw)
-    else:
-        update_system_msg(f"Cannot Move to EEF Observation Pose ({move_result}). Resetting env...", wait_sec=2.0)
+    success, (scene_raw, grasp_raw) = observe(env_interface=env_interface, max_try = 10, attach=False)
+    if not success:
         reset_signal = True
         continue
 
-
-    update_system_msg("Move to Observe Scene...")
-    max_try = 10
-    for _ in range(max_try):
-        move_result, _info = env_interface.move_to_named_target("observe")
-        if move_result == SUCCESS:
-            break
-        else:
-            continue
-    if move_result == SUCCESS:
-        scene_raw = env_interface.observe_scene(obs_type = 'pointcloud', update = True)
-    else:
-        update_system_msg(f"Cannot Move to Scene Observation Pose ({move_result}). Resetting env...", wait_sec=2.0)
-        reset_signal = True
-        continue
-
-
-    update_system_msg("Coming back to initial pose...")
-    max_try = 10
-    for _ in range(max_try):
-        move_result, _info = env_interface.move_to_named_target("init")
-        if move_result == SUCCESS:
-            break
-        else:
-            continue
-    if move_result == SUCCESS:
-        pass
-    else:
-        update_system_msg(f"Cannot come back to initial pose ({move_result}). Resetting env...", wait_sec=2.0)
-        reset_signal = True
-        continue
 
 
     ###### Sample Place Pose ######
