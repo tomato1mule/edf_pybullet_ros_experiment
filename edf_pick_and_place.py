@@ -34,7 +34,7 @@ device = 'cuda:0'
 unit_len = 0.01
 ##### Initialize Pick Agent #####
 pick_agent_config_dir = "config/agent_config/pick_agent.yaml"
-pick_agent_param_dir = "checkpoint/mug_10_demo/pick/model_iter_430.pt"
+pick_agent_param_dir = "checkpoint/mug_10_demo/pick/model_iter_600.pt"
 max_N_query_pick = 1
 langevin_dt_pick = 0.001
 
@@ -81,8 +81,8 @@ recover_scale = Rescale(rescale_factor=unit_len)
 
 
 ###### Define Primitives ######
-pick_checklist = []
-place_checklist = []
+pick_checklist = [('collision_check', {'colcheck_r': 0.003})]
+place_checklist = [('collision_check', {'colcheck_r': 0.0015})]
 
 
 def get_pick(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
@@ -353,12 +353,12 @@ while True:
     ###### Execute Pick ######
     pick_result, _info = env_interface.pick_execute(plans=pick_plans, post_pick_pose=post_pick_pose)
     if pick_result == SUCCESS:
-        update_system_msg(f"Pick result: {pick_result}")
+        update_system_msg(f"Moving to pick pose result: {pick_result}")
         pick_demo = TargetPoseDemo(target_poses=pick_poses, scene_pc=scene_raw, grasp_pc=grasp_raw)
         env_interface.detach()
         env_interface.attach_placeholder(size=0.15) # To avoid collsion with the grasped object
     else:
-        update_system_msg(f"Pick result: {pick_result}, Resetting env...", wait_sec=2.0)
+        update_system_msg(f"Moving to pick pose result: {pick_result}, Resetting env...", wait_sec=2.0)
         reset_signal = True
         continue
 
@@ -430,12 +430,12 @@ while True:
     ###### Execute place ######
     place_result, _info = env_interface.place_execute(plans=place_plans, post_place_pose=post_place_pose)
     if place_result == SUCCESS:
-        update_system_msg(f"Place result: {place_result}")
+        update_system_msg(f"Moving to place pose result: {place_result}")
         place_demo = TargetPoseDemo(target_poses=place_poses, scene_pc=scene_raw, grasp_pc=grasp_raw)
         env_interface.detach()
         env_interface.release()
     else:
-        update_system_msg(f"Place result: {place_result}, Resetting env...", wait_sec=2.0)
+        update_system_msg(f"Moving to place pose move result: {place_result}, Resetting env...", wait_sec=2.0)
         reset_signal = True
         continue
 
