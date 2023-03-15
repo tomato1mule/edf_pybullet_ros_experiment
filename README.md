@@ -164,7 +164,7 @@ python train_log_viewer.py --log-dir=checkpoint/mug_10_demo/<pick or place>/trai
 ```
 
 ## C) Evaluation
-**0 (Optional).** If you want to use already trained weights, rename 'checkpoint_example' folder to 'checkpoint'
+**0 (Optional).** If you want to use already trained weights, just rename 'checkpoint_example' folder to 'checkpoint'
 
 **1.** First, run Pybullet environment in an evaluation setup (Unseen pose/instance/distractors)
 ```shell
@@ -174,3 +174,6 @@ bash bringup_edf_env_ros_eval.sh
 ```shell
 python edf_pick_and_place.py
 ```
+
+> **Note** Our motion planning pipeline is currently very unstable. Therefore, even if EDFs sampled correct pick-and-place poses, the success rate can be low. To reproduce our experimental results in the paper, please check the following branch: https://github.com/tomato1mule/edf/tree/iclr2023_rebuttal_ver
+>
