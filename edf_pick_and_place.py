@@ -296,8 +296,8 @@ while True:
 
 
     ###### Sample Pick Pose ######
-    pick_max_try = 2
-    max_try_pose_pick = 10
+    pick_max_try = 3
+    max_try_plan_pick = 10
     for n_trial in range(pick_max_try):
         ###### Infer pick poses ######
         if n_trial == 0:
@@ -307,10 +307,11 @@ while True:
         ###### Infer pre-pick and post-pick poses ######
         if isinstance(pick_inference_result, SE3):
             update_system_msg('Looking for feasible pick poses...')
-            pick_poses: SE3 = pick_inference_result[:max_try_pose_pick]
+            pick_poses: SE3 = pick_inference_result
             pre_pick_poses, post_pick_poses = get_pre_post_pick(scene=scene_raw, grasp=grasp_raw, pick_poses=pick_poses)
 
             ###### Check Feasiblity ######
+            plan_try = 0
             for idx in range(len(pick_poses)):
                 pick_pose, pre_pick_pose, post_pick_pose = pick_poses[idx], pre_pick_poses[idx], post_pick_poses[idx]
                 context = {'pose': pick_pose, 'scene': scene_raw, 'grasp': grasp_raw}
@@ -318,8 +319,13 @@ while True:
                 if feasibility == FEASIBLE:
                     move_robot_near_target(pose=pick_pose, env_interface=env_interface)
                     pick_plan_result, pick_plans = env_interface.pick_plan(pre_pick_pose=pre_pick_pose, pick_pose=pick_pose)
+                    plan_try += 1
                     if pick_plan_result == SUCCESS:
                         break
+                    elif plan_try == max_N_query_pick:
+                        _info = pick_plans
+                        feasibility = INFEASIBLE
+                        continue
                     else:
                         _info = pick_plans
                         feasibility = INFEASIBLE
@@ -345,7 +351,7 @@ while True:
         
     if reset_signal:
         continue
-    elif n_trial == pick_max_try:
+    elif n_trial == pick_max_try-1 and feasibility != FEASIBLE:
         reset_signal = True
         continue
     else:
@@ -373,8 +379,8 @@ while True:
 
 
     ###### Sample Place Pose ######
-    place_max_try = 2
-    max_try_pose_place = 10
+    place_max_try = 3
+    max_try_plan_place = 10
     for n_trial in range(place_max_try):
         ###### Infer place poses ######
         if n_trial == 0:
@@ -384,10 +390,11 @@ while True:
         ###### Infer pre-place and post-place poses ######
         if isinstance(place_inference_result, SE3):
             update_system_msg('Looking for feasible place poses...')
-            place_poses: SE3 = place_inference_result[:max_try_pose_place]
+            place_poses: SE3 = place_inference_result
             pre_place_poses, post_place_poses = get_pre_post_place(scene=scene_raw, grasp=grasp_raw, place_poses=place_poses, pre_pick_pose=pre_pick_pose, pick_pose=pick_pose)
 
             ###### Check Feasiblity ######
+            plan_try = 0
             for idx in range(len(place_poses)):
                 place_pose, pre_place_pose, post_place_pose = place_poses[idx], pre_place_poses[idx], post_place_poses[idx]
                 context = {'pose': place_pose, 'scene': scene_raw, 'grasp': grasp_raw}
@@ -395,8 +402,13 @@ while True:
                 if feasibility == FEASIBLE:
                     move_robot_near_target(pose=place_pose, env_interface=env_interface)
                     place_plan_result, place_plans = env_interface.place_plan(pre_place_pose=pre_place_pose, place_pose=place_pose)
+                    plan_try += 1
                     if place_plan_result == SUCCESS:
                         break
+                    elif plan_try == max_try_plan_place:
+                        _info = place_plans
+                        feasibility = INFEASIBLE
+                        continue
                     else:
                         _info = place_plans
                         feasibility = INFEASIBLE
@@ -423,7 +435,7 @@ while True:
     if reset_signal:
         reset_signal = True
         continue
-    elif n_trial == place_max_try:
+    elif n_trial == place_max_try-1 and feasibility != FEASIBLE:
         reset_signal = True
         continue
     else:
