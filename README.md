@@ -21,22 +21,33 @@ conda activate edf_exp
 
 **Step 3.** Install EDF.
 ```shell
+# go to edf folder
 cd edf
+
+
+# install edf and dependencies
+CUDA=cu113
+pip install torch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/${CUDA}
+pip install torch-cluster==1.6.0 -f https://data.pyg.org/whl/torch-1.11.0+${CUDA}.html
+pip install torch-scatter==2.0.9 -f https://data.pyg.org/whl/torch-1.11.0+${CUDA}.html
+pip install iopath fvcore
+pip install --no-index --no-cache-dir pytorch3d==0.7.2 -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_${CUDA}_pyt1110/download.html
+pip install -e .
+
+
+# come back to root folder
+cd ..
 ```
 
-
-
-
-## 2.2 Install ROS (Noetic) on conda via robostack
-https://robostack.github.io/GettingStarted.html
-https://github.com/RoboStack/ros-humble
-https://github.com/RoboStack/ros-noetic
+**Step 4.** Install ROS (Noetic) on conda via robostack
 ```shell
+# Visit these links if you have trouble installing robostack.
+# 1) https://robostack.github.io/GettingStarted.html
+# 2) https://github.com/RoboStack/ros-noetic
 
 
-# this adds the conda-forge channel to the new created environment configuration 
+# this adds the conda-forge channel to the new created environment configuration and the robostack channels
 conda config --env --add channels conda-forge
-# and the robostack channels
 conda config --env --add channels robostack
 conda config --env --add channels robostack-experimental
 conda config --env --add channels robostack-humble
@@ -46,27 +57,20 @@ conda config --env --add channels robostack-humble
 pip install cryptography==38.0.4
 
 # Install the version of ROS you are interested in:
-#mamba install ros-humble-desktop  # (or "mamba install ros-noetic-desktop" or "mamba install ros-galactic-desktop")
 mamba install ros-noetic-desktop
 
 # optionally, install some compiler packages if you want to e.g. build packages in a colcon_ws:
-mamba install compilers cmake pkg-config make ninja #colcon-common-extensions
+mamba install compilers cmake pkg-config make ninja
 
 # on linux and osx (but not Windows) you might want to:
 mamba install catkin_tools
-# on Windows, install Visual Studio 2017 or 2019 with C++ support 
-# see https://docs.microsoft.com/en-us/cpp/build/vscpp-step-0-installation?view=msvc-160
 
 # only on linux, if you are having issues finding GL/OpenGL, also do:
 mamba install mesa-libgl-devel-cos7-x86_64 mesa-dri-drivers-cos7-x86_64 libselinux-cos7-x86_64 libxdamage-cos7-x86_64 libxxf86vm-cos7-x86_64 libxext-cos7-x86_64 xorg-libxfixes
 
-# on Windows, install the Visual Studio command prompt via Conda:
-# mamba install vs2019_win-64
 
-# note that in this case, you should also install the necessary dependencies with conda/mamba, if possible
 
-# reload environment to activate required scripts before running anything
-# on Windows, please restart the Anaconda Prompt / Command Prompt!
+# Reboot Conda env
 conda deactivate
 conda activate edf_exp
 
@@ -76,41 +80,47 @@ rosdep init  # note: do not use sudo!
 rosdep update
 ```
 
-# 2.2 Install Moveit2 and other packages
+**Step 5.** Install Moveit and other ROS packages
 ```shell
-mamba install ros-noetic-moveit=1.1.0
-mamba install ros-noetic-moveit-ros-perception=1.1.0
-mamba install ros-noetic-ros-controllers=0.18.1
-mamba install ros-noetic-ros-control=0.19.4
-mamba install ros-noetic-ros-numpy=0.0.4
+mamba install ros-noetic-moveit=1.1.0 ros-noetic-moveit-ros-perception=1.1.0 ros-noetic-ros-controllers=0.18.1 ros-noetic-ros-control=0.19.4 ros-noetic-ros-numpy=0.0.4
 ```
 
-# 2.3 Configure catkin
+**Step 6.** Configure Catkin workspace for ros_edf_interface package
 ```shell
+# Go to ros_edf_interface folder to setup ros workspace environment
 cd ros_edf_interface
 catkin_make
-cd ..
-```
 
-# 2.5 
-```shell
-source ros_edf_interface/devel/setup.sh
+# This script will make ros workspace setups to be auto-loaded when conda env is activated
 bash conda_env_setup.sh
+
+# Come back to root folder
+cd ..
+
+# Reboot Conda env
 conda deactivate
 conda activate edf_exp
-bash create_jupyter_dotenv.sh
 ```
 
-# 2.6
+**Step 7.** Install PyBullet Simulation Environment
 ```shell
-conda activate edf_exp
-pip install python-dotenv            # ==0.21.1
-bash create_jupyter_dotenv.sh
+
 ```
 
-
-# 3
+**Step 8. (Optional)** Set .env file for Jupyter notebook
 ```shell
-pip install jupyterthemes
-jt -t onedork -fs 115 -nfs 125 -tfs 115 -dfs 115 -ofs 115 -cursc r -cellw 80% -lineh 115 -altmd  -kl -T -N
+bash create_jupyter_dotenv.sh
+pip install python-dotenv
+```
+
+# Usage
+## Collect Human Demo
+```shell
+python collect_human_demo.py
+```
+
+## Train
+```shell
+python pick_train.py
+python place_train.py
 ```
