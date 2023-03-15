@@ -1,5 +1,6 @@
 from typing import Optional, Union, List, Tuple, Dict, Any
 import time
+import argparse
 
 from ros_edf.ros_interface import EdfRosInterface
 from ros_edf.pc_utils import pcd_from_numpy, draw_geometry, reconstruct_surface
@@ -16,9 +17,21 @@ import plotly.express as ple
 import open3d as o3d
 
 
+
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('-s', '--save-demo', action='store_true',
+                    help='save demonstrations if set')
+parser.add_argument('-n', '--n-demo', type=int, default=10,
+                    help='number of demonstrations to collect')
+parser.add_argument('--save-dir', type=str, default="demo/test_demo",
+                    help='number of demonstrations to collect')
+args = parser.parse_args()
+
+
 ###### Initialize Demo Server ######
-save_demo = True
-n_episodes = 10
+save_demo = args.save_demo
+n_episodes = args.n_demo
+save_dir = args.save_dir
 count_reset_episodes = False
 
 scene_ranges = np.array([[-0.23, 0.23],
@@ -402,7 +415,6 @@ try:
 except Exception as e:
     update_system_msg(f"Error occured. Saving previously collected demonstrations. \n ERROR: {e}")
     if save_demo and len(demo_list > 1):
-        save_dir = "demo/test_demo"
         update_system_msg(f"Saving to {save_dir}")
         save_demos(demos=demo_list, dir=save_dir)
 
@@ -410,7 +422,6 @@ except Exception as e:
 ###### Save Collected Demonstrations ######
 
 if save_demo:
-    save_dir = "demo/test_demo"
     update_system_msg(f"Saving to {save_dir}")
     save_demos(demos=demo_list, dir=save_dir)
 

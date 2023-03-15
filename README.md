@@ -104,7 +104,16 @@ conda activate edf_exp
 
 **Step 7.** Install PyBullet Simulation Environment
 ```shell
+# Move to install edf_env
+cd edf_env
+pip install -e .
 
+# Come back to root folder
+cd ..
+
+# Reboot Conda env
+conda deactivate
+conda activate edf_exp
 ```
 
 **Step 8. (Optional)** Set .env file for Jupyter notebook
@@ -114,10 +123,35 @@ pip install python-dotenv
 ```
 
 # Usage
-## Collect Human Demo
+## A) Collect Human Demo
+**1.** First, run Pybullet environment
 ```shell
-python collect_human_demo.py
+bash bringup_edf_env_ros.sh
 ```
+**2.** In another terminal, run demo-collection web server
+```shell
+# flag -s to save demonstrations.
+# flag -n=<number> to set number of demonstrations to collect.
+python collect_human_demo.py -s -n=10 --save-dir="demo/mug_demo"
+```
+**3.** Go to http://127.0.0.1:8050/ in your web browser and collect demonstrations.
+
+* Drag the screen to rotate
+* Shift drag the screen to pan
+* Drag the sliders to adjust target poses
+* Press submit button to execute and save demonstrations.
+* Press reset button to reset the environment. However, it will not immediately reset, so please be patient.
+* See the 'Robot State' information in the left side of the panel.
+
+**Troubleshooter**
+* See the 'Robot State' information in the left side of the panel.
+* Only provide demonstrations when the 'Robot State' is 'Waiting for pick/place poses'.
+* If the robot does not move even if you submit a pose, please check the 'Robot State' message to see if the submitted pose has collision, or reach plan cannot be found.
+* Do not connect to the web server in more than one browsers/tabs. Otherwise, you will see no point cloud.
+* Point cloud will appear once the observation is done and robot is ready to receive demonstrations. 
+* If the web server is not launching, please check you have run 'bash bringup_edf_env_ros.sh'.
+
+**4.** Once all the demonstrations are collected, the 'Robot State' will inform that the demonstrations are saved to
 
 ## Train
 ```shell
