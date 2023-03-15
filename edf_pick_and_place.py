@@ -296,7 +296,8 @@ while True:
 
 
     ###### Sample Pick Pose ######
-    pick_max_try = 100000
+    pick_max_try = 2
+    max_try_pose_pick = 10
     for n_trial in range(pick_max_try):
         ###### Infer pick poses ######
         if n_trial == 0:
@@ -306,7 +307,7 @@ while True:
         ###### Infer pre-pick and post-pick poses ######
         if isinstance(pick_inference_result, SE3):
             update_system_msg('Looking for feasible pick poses...')
-            pick_poses: SE3 = pick_inference_result
+            pick_poses: SE3 = pick_inference_result[:max_try_pose_pick]
             pre_pick_poses, post_pick_poses = get_pre_post_pick(scene=scene_raw, grasp=grasp_raw, pick_poses=pick_poses)
 
             ###### Check Feasiblity ######
@@ -344,7 +345,7 @@ while True:
         
     if reset_signal:
         continue
-    elif n_trial == pick_max_try - 1:
+    elif n_trial == pick_max_try:
         reset_signal = True
         continue
     else:
@@ -372,7 +373,8 @@ while True:
 
 
     ###### Sample Place Pose ######
-    place_max_try = 100000
+    place_max_try = 2
+    max_try_pose_place = 10
     for n_trial in range(place_max_try):
         ###### Infer place poses ######
         if n_trial == 0:
@@ -382,7 +384,7 @@ while True:
         ###### Infer pre-place and post-place poses ######
         if isinstance(place_inference_result, SE3):
             update_system_msg('Looking for feasible place poses...')
-            place_poses: SE3 = place_inference_result
+            place_poses: SE3 = place_inference_result[:max_try_pose_place]
             pre_place_poses, post_place_poses = get_pre_post_place(scene=scene_raw, grasp=grasp_raw, place_poses=place_poses, pre_pick_pose=pre_pick_pose, pick_pose=pick_pose)
 
             ###### Check Feasiblity ######
@@ -421,7 +423,7 @@ while True:
     if reset_signal:
         reset_signal = True
         continue
-    elif n_trial == place_max_try - 1:
+    elif n_trial == place_max_try:
         reset_signal = True
         continue
     else:

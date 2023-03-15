@@ -1,5 +1,7 @@
 import os
 import argparse
+import gzip, pickle
+
 from dash import Dash, html, dcc
 
 import torch
@@ -11,12 +13,9 @@ from edf.agent import PickAgent, PlaceAgent
 
 app = Dash(__name__)
 
-def main_func(log_id, show_processed_pcd = True):
-    agent_param_dir = "checkpoint/mug_10_demo/place"
-    log_name = f"trainlog_iter_{log_id}.gzip"
-    print(f"Visualizing {os.path.join(agent_param_dir,log_name)}")
-
-    train_logs = gzip_load(dir=agent_param_dir, filename=log_name)
+def main_func(log_dir, show_processed_pcd = True):
+    with gzip.open(log_dir, 'rb') as f:
+        train_logs = pickle.load(f)
     scene_raw: PointCloud = train_logs['scene_raw']
     grasp_raw: PointCloud = train_logs['grasp_raw']
     scene_proc: PointCloud = train_logs['scene_proc']
@@ -26,8 +25,6 @@ def main_func(log_id, show_processed_pcd = True):
     target_pose = SE3(train_logs['target_T'])
     best_pose = SE3(train_logs['best_neg_T'])
     sampled_poses= SE3(train_logs['sampled_Ts'])
-
-
 
 
     grasp_pl = grasp_raw.plotly(point_size=1.0, name="grasp")
@@ -79,17 +76,11 @@ def main_func(log_id, show_processed_pcd = True):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Visualization webserver for EDF place training')
-    # parser.add_argument('--eval-config-dir', type=str, default='config/eval_config/eval.yaml',
-    #                     help='')
-    # parser.add_argument('--save-plot', action='store_true',
-    #                     help='')
-    # parser.add_argument('--place-max-distance-plan', type=float, default=[0.05, 1.5], nargs='+',
-    #                     help='')
-    parser.add_argument('-i', '--log-id', type=int, default=1,
+    parser.add_argument('--log-dir', type=str,
                         help='')
     args = parser.parse_args()
     
-    log_id = args.log_id
-    main_func(log_id=log_id)
+    log_dir = args.log_dir
+    main_func(log_dir=log_dir)
 
     app.run_server(debug=True, host='127.0.0.1')

@@ -1,2 +1,1 @@
-# source ./catkin_ws/devel/setup.bash
-roslaunch ros_edf planning_test.launch
+roslaunch ros_edf ros_edf_env_default.launch

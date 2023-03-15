@@ -151,10 +151,26 @@ python collect_human_demo.py -s -n=10 --save-dir="demo/mug_demo"
 * Point cloud will appear once the observation is done and robot is ready to receive demonstrations. 
 * If the web server is not launching, please check you have run 'bash bringup_edf_env_ros.sh'.
 
-**4.** Once all the demonstrations are collected, the 'Robot State' will inform that the demonstrations are saved to
+**4.** Once all the demonstrations are collected, the 'Robot State' will inform that the demonstrations are saved to certain directions.
 
-## Train
+## B) Train
 ```shell
 python pick_train.py
 python place_train.py
+```
+To visualize training logs, run the following code:
+```shell
+python train_log_viewer.py --log-dir=checkpoint/mug_10_demo/<pick or place>/trainlog_iter_<?>.gzip
+```
+
+## C) Evaluation
+**0 (Optional).** If you want to use already trained weights, rename 'checkpoint_example' folder to 'checkpoint'
+
+**1.** First, run Pybullet environment in an evaluation setup (Unseen pose/instance/distractors)
+```shell
+bash bringup_edf_env_ros_eval.sh
+```
+**2.** In another terminal, run the inference code
+```shell
+python edf_pick_and_place.py
 ```
