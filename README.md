@@ -175,6 +175,8 @@ bash bringup_edf_env_ros_eval.sh
 python edf_pick_and_place.py
 ```
 
-> **Note** Our motion planning pipeline is currently very unstable. Therefore, even if EDFs sampled correct pick-and-place poses, these poses may get rejected as no motion plans can be found by the planner (or execution timeout reached due to slow simulation). As a result, the success rate in this implementation is lower than reported in the paper. Still, the success rate should be reasonably high (about 80%). If the success rate is lower than this rate, something must have gone wrong. 
+> **Note** Our motion planning pipeline is currently very unstable. Therefore, even if EDFs sampled correct pick-and-place poses, these poses may get rejected as no motion plans can be found by the planner. Plus, we did not fine-tune hyperparameters for this new environments (The robot and perception pipelines are different from the original experiments). 
+>
+>As a result, the success rate in this implementation is lower than the rate reported in the paper. Still, the success rate should be reasonably high (about 7~80%). If the success rate is lower than this rate, something must have gone wrong. 
 >
 >To reproduce the original experimental results in the paper, please check the following branch: https://github.com/tomato1mule/edf/tree/iclr2023_rebuttal_ver

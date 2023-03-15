@@ -23,7 +23,7 @@ torch.set_printoptions(precision= 3, sci_mode=False, linewidth=120)
 
 
 save_demo = False
-n_episodes = 10
+n_episodes = 1000
 count_reset_episodes = False
 
 
@@ -270,7 +270,7 @@ def observe(env_interface, max_try: int, attach: bool) -> bool:
 
 
 env_interface = EdfRosInterface(reference_frame = "scene")
-env_interface.moveit_interface.arm_group.set_planning_time(seconds=1)
+env_interface.moveit_interface.arm_group.set_planning_time(seconds=2)
 env_interface.moveit_interface.arm_group.allow_replanning(True)
 
 demo_list = []
