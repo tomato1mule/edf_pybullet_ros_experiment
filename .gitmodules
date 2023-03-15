@@ -7,3 +7,6 @@
 [submodule "edf_standalone"]
 	path = edf_standalone
 	url = https://github.com/tomato1mule/edf_standalone
+[submodule "edf"]
+	path = edf
+	url = ./edf
