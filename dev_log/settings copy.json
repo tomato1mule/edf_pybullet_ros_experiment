@@ -1,8 +1,0 @@
-{
-    "python.autoComplete.extraPaths": [
-        "~/Codes/Research/edf_env/catkin_ws/src/ros_edf/src"
-    ],
-    "python.analysis.extraPaths": [
-        "~/Codes/Research/edf_env/catkin_ws/src/ros_edf/src"
-    ],
-}

@@ -1,12 +1,15 @@
-# 1. edf_pybullet_ros_experiment
-Experiments for Equivariant Descriptor Fields with PyBullet and ROS MoveIt.
-# 2. Installation
+# Equivariant Descriptor Fields with ROS MoveIt and PyBullet
+Example codes for Equivariant Descriptor Fields with and ROS MoveIt in PyBullet Simulation Environment.\
+Please visit https://github.com/tomato1mule/edf for more information on Equivariant Descriptor Fields.
+# Installation
+
+**Step 1.** Clone Github repository.
 It is important to clone **RECURSIVELY**.
 ```shell
 git clone --recursive https://github.com/tomato1mule/edf_pybullet_ros_experiment
 ```
 
-# 2.1 Setup conda env
+**Step 2.** Setup Conda/Mamba environment. We recommend using Mamba for faster installation.
 ```shell
 # if you don't have mamba yet, install it first (not needed when using mambaforge):
 conda install mamba -c conda-forge
@@ -14,11 +17,15 @@ conda install mamba -c conda-forge
 # now create a new environment
 mamba create -n edf_exp python=3.8
 conda activate edf_exp
-
-# Install dependencies
-
-pip install -e .
 ```
+
+**Step 3.** Install EDF.
+```shell
+cd edf
+```
+
+
+
 
 ## 2.2 Install ROS (Noetic) on conda via robostack
 https://robostack.github.io/GettingStarted.html
