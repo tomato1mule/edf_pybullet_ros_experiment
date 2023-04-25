@@ -7,7 +7,7 @@ from ros_edf.pc_utils import pcd_from_numpy, draw_geometry, reconstruct_surface
 from edf.data import PointCloud, SE3, TargetPoseDemo, DemoSequence, save_demos
 from edf.pc_utils import check_pcd_collision, optimize_pcd_collision
 from edf.server import DashEdfDemoServer
-from edf.env_interface import SUCCESS, PLAN_FAIL, EXECUTION_FAIL, RESET, INFEASIBLE, FEASIBLE
+from edf.env_interface import SUCCESS, PLAN_FAIL, EXECUTION_FAIL, RESET, INFEASIBLE, FEASIBLE, TERMINATE
 
 import torch
 import numpy as np
@@ -19,8 +19,8 @@ import open3d as o3d
 
 
 parser = argparse.ArgumentParser(description='')
-parser.add_argument('-s', '--save-demo', action='store_true',
-                    help='save demonstrations if set')
+parser.add_argument('-d', '--dont-save-demo', action='store_true',
+                    help='do not save demonstrations if set')
 parser.add_argument('-n', '--n-demo', type=int, default=10,
                     help='number of demonstrations to collect')
 parser.add_argument('--save-dir', type=str, default="demo/test_demo",
@@ -29,7 +29,10 @@ args = parser.parse_args()
 
 
 ###### Initialize Demo Server ######
-save_demo = args.save_demo
+if args.dont_save_demo:
+    save_demo = False
+else:
+    save_demo = True
 n_episodes = args.n_demo
 save_dir = args.save_dir
 count_reset_episodes = False
@@ -58,7 +61,7 @@ def get_pick(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
     demo_server.update_scene_pcd(pcd=scene)
     demo_server.update_grasp_pcd(pcd=grasp)
     user_response = demo_server.get_user_response()
-    if user_response == RESET:
+    if user_response == RESET or user_response == TERMINATE:
         return user_response
     elif isinstance(user_response, SE3):
         return user_response
@@ -71,7 +74,7 @@ def get_place(scene: PointCloud, grasp: PointCloud) -> Union[str, SE3]:
     demo_server.update_scene_pcd(pcd=scene)
     demo_server.update_grasp_pcd(pcd=grasp)
     user_response = demo_server.get_user_response()
-    if user_response == RESET:
+    if user_response == RESET or user_response == TERMINATE:
         return user_response
     elif isinstance(user_response, SE3):
         return user_response
@@ -237,10 +240,11 @@ env_interface.moveit_interface.arm_group.allow_replanning(True)
 demo_list = []
 episode_count = 0
 reset_signal = False
+terminate_signal = False
 
 try:
     while True:
-        if episode_count >= n_episodes:
+        if episode_count >= n_episodes or terminate_signal:
             break
         ###### Reset Env ######
         update_system_msg('Resetting Environment...')
@@ -301,11 +305,16 @@ try:
             elif pick_inference_result == RESET:
                 reset_signal = True
                 break
+            elif pick_inference_result == TERMINATE:
+                terminate_signal = True
+                break
             else:
                 raise NotImplementedError(f"Unknown pick_inference_result: {pick_inference_result}")
             
         if reset_signal:
             continue
+        elif terminate_signal:
+            break
         elif n_trial == pick_max_try - 1:
             reset_signal = True
             continue
@@ -378,12 +387,17 @@ try:
             elif place_inference_result == RESET:
                 reset_signal = True
                 break
+            elif place_inference_result == TERMINATE:
+                terminate_signal = True
+                break
             else:
                 raise NotImplementedError(f"Unknown place_inference_result: {place_inference_result}")
             
         if reset_signal:
             reset_signal = True
             continue
+        elif terminate_signal:
+            break
         elif n_trial == place_max_try - 1:
             reset_signal = True
             continue
@@ -413,17 +427,27 @@ try:
         #         break
         # print(f"Move to End-Effector observation pose: {result}")
 except Exception as e:
-    update_system_msg(f"Error occured. Saving previously collected demonstrations. \n ERROR: {e}")
-    if save_demo and len(demo_list > 1):
-        update_system_msg(f"Saving to {save_dir}")
+    if save_demo and len(demo_list) >= 1:
+        update_system_msg(f"Error occured. Saving previously collected demonstrations. \n ERROR: {e} \n" + f"Saving to {save_dir}")
         save_demos(demos=demo_list, dir=save_dir)
-
+    elif save_demo and len(demo_list) == 0:
+        update_system_msg(f"Error occured. Saving previously collected demonstrations. \n ERROR: {e} \n" + f"Nothing to save")
+    elif not save_demo:
+        update_system_msg(f"Error occured. Saving previously collected demonstrations. \n ERROR: {e} \n" + f"Not saving demonstrations as --dont-save-demo flag is on.")
+    else:
+        raise Exception("Something wrong")
 
 ###### Save Collected Demonstrations ######
 
-if save_demo:
+if save_demo and len(demo_list) >= 1:
     update_system_msg(f"Saving to {save_dir}")
     save_demos(demos=demo_list, dir=save_dir)
+elif save_demo and len(demo_list) == 0:
+    update_system_msg(f"Nothing to save")
+elif not save_demo:
+    update_system_msg(f"Not saving demonstrationsas as --dont-save-demo flag is on.")
+else:
+    raise Exception("Something wrong")
 
 
 cleanup()
