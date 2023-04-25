@@ -1,1 +1,1 @@
-roslaunch ros_edf ros_edf_env_default.launch
+roslaunch ros_edf ros_edf_env.launch
