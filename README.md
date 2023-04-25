@@ -130,7 +130,7 @@ bash bringup_edf_env_ros.sh
 ```
 **2.** In another terminal, run demo-collection web server
 ```shell
-# flag -s to save demonstrations.
+# flag --dont-save if you don't want to save demonstrations.
 # flag -n=<number> to set number of demonstrations to collect.
 python collect_human_demo.py -n=10 --save-dir="demo/mug_demo"
 ```
