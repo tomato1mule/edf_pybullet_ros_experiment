@@ -132,7 +132,7 @@ bash bringup_edf_env_ros.sh
 ```shell
 # flag -s to save demonstrations.
 # flag -n=<number> to set number of demonstrations to collect.
-python collect_human_demo.py -s -n=10 --save-dir="demo/mug_demo"
+python collect_human_demo.py -n=10 --save-dir="demo/mug_demo"
 ```
 **3.** Go to http://127.0.0.1:8050/ in your web browser and collect demonstrations.
 
@@ -157,10 +157,6 @@ python collect_human_demo.py -s -n=10 --save-dir="demo/mug_demo"
 ```shell
 python pick_train.py
 python place_train.py
-```
-To visualize training logs, run the following code:
-```shell
-python train_log_viewer.py --log-dir=checkpoint/mug_10_demo/<pick or place>/trainlog_iter_<?>.gzip
 ```
 
 ## C) Evaluation
